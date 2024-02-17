@@ -51,12 +51,12 @@ public class Main {
                     case 4 -> {
                         System.out.print("Enter your registered contact number: ");
                         long contact = scanner.nextLong();
-                        account.transferAmount(contact);
+                        account.debitAmount(contact);
                     }
 
                     case 5 -> { System.out.println(account.checkAccountBalance()); }
                     case 6 -> {
-                        account.debitCredit();
+                        account.transferFunds();
                     }
                     case 0 -> {
                         System.out.println("Thank you for banking with us! Tada 👋");

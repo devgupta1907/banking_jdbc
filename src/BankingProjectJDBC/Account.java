@@ -15,9 +15,28 @@ public class Account {
     }
 
 
+//   This method is used to check if the account with a certain contact number exists or not.
+//   It does not ask or validates for security pin.
+//   This method is useful during transfer of funds as we do not ask for pin from the receiver.
+    private boolean isAccountExist(long contact) {
+        String query = "SELECT contact FROM accounts WHERE contact = ?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setLong(1, contact);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSet.next();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
+
+
 //    This method takes registered contact number as argument and checks for account existence.
 //    If account exists with the given contact, then it will validate security pin.
-    public boolean validateAccountAndPin(long contact) {
+    private boolean validateAccountAndPin(long contact) {
         String query = "SELECT contact, security_pin FROM accounts WHERE contact = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -41,11 +60,14 @@ public class Account {
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
         }
-        return false;
+
     }
 
 
+//    This method is used to credit funds in bank account.
+//    It takes user's contact number as an argument and validates it before crediting funds.
     public boolean creditAmount(long contact) {
 
         String updateQuery = "UPDATE accounts SET balance = balance + ? WHERE contact = ?";
@@ -82,7 +104,9 @@ public class Account {
     }
 
 
-    public boolean transferAmount(long contact) {
+//    This method is used to debit funds from bank account.
+//    It is different from transfer of funds.
+    public boolean debitAmount(long contact) {
 
         String query = "UPDATE accounts SET balance = balance - ? WHERE contact = ?";
 
@@ -112,27 +136,15 @@ public class Account {
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
         }
-        return false;
+
     }
 
 
-    public boolean isAccountExist(long contact) {
-        String query = "SELECT contact FROM accounts WHERE contact = ?";
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setLong(1, contact);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-            return resultSet.next();
-
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return false;
-    }
-
-    public void debitCredit() {
+//    This method is used to transfer funds from one account to another.
+//    It also uses commit and rollback functionality of JDBC.
+    public void transferFunds() {
         String creditQuery = "UPDATE accounts SET balance = balance + ? WHERE contact = ?";
         String debitQuery = "UPDATE accounts SET balance = balance - ? WHERE contact = ?";
 
@@ -147,6 +159,7 @@ public class Account {
             if (!validateAccountAndPin(senderContact)) {
                 return;
             }
+
             System.out.print("Enter receiver's registered contact number: ");
             long receiverContact = scanner.nextLong();
             if(!isAccountExist(receiverContact)) {
@@ -173,6 +186,7 @@ public class Account {
                 connection.rollback();
                 System.out.println("Transaction Failed!");
             }
+            connection.setAutoCommit(true);
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -180,7 +194,10 @@ public class Account {
     }
 
 
-    public double checkAccountBalance(long contact) {
+//    This method takes the contact number as argument to check the balance.
+//    This method assumes that the passed contact number is already validated.
+//    It is useful when we print the updated balance after a transaction.
+    private double checkAccountBalance(long contact) {
 
         String query = "SELECT balance FROM accounts WHERE contact = ?";
 
@@ -202,6 +219,9 @@ public class Account {
     }
 
 
+//    It is an overloaded method of checkAccountBalance(long contact).
+//    This method takes user's contact number and validates it as an additional feature.
+//    It is useful when the user wants to check balance in his account by entering contact number.
     public double checkAccountBalance() {
 
         System.out.print("Enter your registered contact number: ");
@@ -213,7 +233,9 @@ public class Account {
         return checkAccountBalance(contact);
     }
 
-    public long createAccountNumber() {
+//    This method creates a unique account number.
+//    This method is accessed by openAccount() method to create an account number for the user.
+    private long createAccountNumber() {
         String query = "SELECT account_number FROM accounts ORDER BY account_number DESC LIMIT 1";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -232,7 +254,7 @@ public class Account {
         return 76860101;
     }
 
-
+//    This method takes the contact of user and open an account for that user.
     public void openAccount(long contact) {
 
         String query = "INSERT INTO accounts (account_number, contact, security_pin, balance) VALUES(?, ?, ?, ?)";
@@ -248,9 +270,7 @@ public class Account {
             preparedStatement.setLong(2, contact);
             preparedStatement.setLong(1, createAccountNumber());
 
-
             int returnedRow = preparedStatement.executeUpdate();
-
             if (returnedRow > 0) System.out.println("\nSUCCESS, account created!");
             else System.out.println("\nFAILED! account not created!");
 
