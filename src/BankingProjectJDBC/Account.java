@@ -6,7 +6,7 @@ import java.util.Scanner;
 import java.sql.*;
 import java.time.LocalDate;
 
-public class Account {
+class Account {
     
     private Connection connection;
     private Scanner scanner;
@@ -17,9 +17,13 @@ public class Account {
     }
 
 
-//   This method is used to check if the account with a certain contact number exists or not.
-//   It does not ask or validates for security pin.
-//   This method is useful during transfer of funds as we do not ask for pin from the receiver.
+    /**
+     * Checks if an account with a given contact number exists without validating the security pin.
+     * This method is useful during fund transfers as pin validation is not required for the recipient.
+     *
+     * @param contact The contact number to check for account existence.
+     * @return true if an account exists with the provided contact number, false otherwise.
+     */
     public boolean isAccountExist(long contact) {
         String query = "SELECT contact FROM accounts WHERE contact = ?";
 
@@ -36,8 +40,13 @@ public class Account {
     }
 
 
-//    This method takes registered contact number as argument and checks for account existence.
-//    If account exists with the given contact, then it will validate security pin.
+    /**
+     * Validates the existence of an account based on the provided contact number.
+     * Additionally, it validates the security pin associated with the account.
+     *
+     * @param contact The registered contact number to validate.
+     * @return true if the account exists and the pin is validated, false otherwise.
+     */
     public boolean validateAccountAndPin(long contact) {
         String query = "SELECT contact, security_pin FROM accounts WHERE contact = ?";
 
@@ -67,8 +76,13 @@ public class Account {
 
     }
 
-//    This method is used to credit funds in bank account.
-//    It takes user's contact number as an argument and validates it before crediting funds.
+    /**
+     * Credits funds into a bank account after validating the user's contact number.
+     *
+     * @param contact The user's contact number.
+     * @param amount The amount to credit into the account.
+     * @return true if the credit operation is successful, false otherwise.
+     */
     public boolean cred(long contact, double amount) {
 
         String updateQuery = "UPDATE accounts SET balance = balance + ? WHERE contact = ?";
@@ -91,8 +105,12 @@ public class Account {
         }
     }
 
-    //    This method is used to debit funds from bank account.
-//    It is different from transfer of funds.
+    /**
+     * Debits funds from a bank account after validating the user's contact number.
+     * @param contact The user's contact number.
+     * @param amount The amount to debit from the account.
+     * @return true if the debit operation is successful, false otherwise.
+     */
     public boolean debit(long contact, double amount) {
         String query = "UPDATE accounts SET balance = balance - ? WHERE contact = ?";
 
@@ -115,8 +133,13 @@ public class Account {
     }
 
 
-    //    This method is used to transfer funds from one account to another.
-//    It also uses commit and rollback functionality of JDBC.
+    /**
+     * Transfers funds from one account to another, ensuring the atomicity of the transaction.
+     * @param sender The contact number of the sender.
+     * @param receiver The contact number of the recipient.
+     * @param amount The amount to transfer.
+     * @return true if the transfer is successful, false otherwise.
+     */
     public boolean testTransfer(long sender, long receiver, double amount) {
 
         try {
@@ -138,6 +161,12 @@ public class Account {
         }
     }
 
+    /**
+     * Retrieves a list of transactions associated with a given contact number.
+     *
+     * @param contact The contact number to retrieve transactions for.
+     * @return ArrayList of Transactions objects representing the transactions.
+     */
 
     public ArrayList<Transactions> getTransactions(long contact) {
         String query = "SELECT transaction_date, debit, credit FROM transactions WHERE contact = ?";
@@ -163,37 +192,40 @@ public class Account {
         return transactions;
     }
 
+
+    /**
+     * Registers a transaction associated with the given contact number and amount.
+     *
+     * @param contact The contact number associated with the transaction.
+     * @param amount The transaction amount.
+     * @param isDebit Flag indicating whether the transaction is a debit or credit.
+     */
     public void registerTransactions(long contact, double amount, boolean isDebit) {
 
-        String debitQuery = "INSERT INTO transactions (transaction_date, contact, debit) VALUES (?, ?, ?)";
-        String creditQuery = "INSERT INTO transactions (transaction_date, contact, credit) VALUES (?, ?, ?)";
+        String query = isDebit ? "INSERT INTO transactions (transaction_date, contact, debit) VALUES (?, ?, ?)"
+                : "INSERT INTO transactions (transaction_date, contact, credit) VALUES (?, ?, ?)";
 
-        try {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             LocalDate today = LocalDate.now();
 
-            PreparedStatement debitStatement = connection.prepareStatement(debitQuery);
-            PreparedStatement creditStatement = connection.prepareStatement(creditQuery);
+            preparedStatement.setDate(1, Date.valueOf(today));
+            preparedStatement.setLong(2, contact);
+            preparedStatement.setDouble(3, amount);
 
-            if (isDebit) {
-                debitStatement.setLong(2, contact);
-                debitStatement.setDate(1, Date.valueOf(today));
-                debitStatement.setDouble(3, amount);
-                debitStatement.executeUpdate();
-            } else {
-                creditStatement.setLong(2, contact);
-                creditStatement.setDate(1, Date.valueOf(today));
-                creditStatement.setDouble(3, amount);
-                creditStatement.executeUpdate();
-            }
+            preparedStatement.executeUpdate();
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
 
-//    This method takes the contact number as argument to check the balance.
-//    This method assumes that the passed contact number is already validated.
-//    It is useful when we print the updated balance after a transaction.
+    /**
+     * Retrieves the balance of a bank account associated with the given contact number.
+     *
+     * @param contact The contact number of the bank account.
+     * @return The balance of the bank account.
+     */
     public double getAccountBalance(long contact) {
 
         String query = "SELECT balance FROM accounts WHERE contact = ?";
@@ -216,8 +248,11 @@ public class Account {
     }
 
 
-//    This method creates a unique account number.
-//    This method is accessed by openAccount() method to create an account number for the user.
+    /**
+     * Generates a unique account number for a new account.
+     *
+     * @return The generated account number.
+     */
     private long createAccountNumber() {
         String query = "SELECT account_number FROM accounts ORDER BY account_number DESC LIMIT 1";
 
@@ -237,7 +272,13 @@ public class Account {
         return 76860101;
     }
 
-//    This method takes the contact of user and open an account for that user.
+    /**
+     * Opens a bank account for a user with the given contact number and security pin.
+     *
+     * @param contact The contact number of the user.
+     * @param pin The security pin for the account.
+     * @return true if the account is successfully opened, false otherwise.
+     */
     public boolean openAccount(long contact, int pin) {
 
         String query = "INSERT INTO accounts (account_number, contact, security_pin, balance) VALUES(?, ?, ?, ?)";

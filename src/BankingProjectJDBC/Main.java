@@ -17,8 +17,6 @@ public class Main {
             Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
             Scanner scanner = new Scanner(System.in);
 
-            User user = new User(connection, scanner);
-            Account account = new Account(connection, scanner);
             Application app = new Application(connection, scanner);
 
             System.out.println("\nWelcome to Anna Banking Services - Your happiness is our assets");
