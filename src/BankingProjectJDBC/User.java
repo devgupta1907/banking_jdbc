@@ -29,25 +29,10 @@ public class User {
     }
 
 
-    public long createUser()  {
+    public boolean createUser(String email, String name, long contact)  {
         String query = "INSERT INTO users (name, email, contact) VALUES(?, ?, ?)";
 
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-
-            System.out.print("Enter Email: ");
-            String email = scanner.next();
-
-            if (isUserExist(email)) {
-                System.out.println("User already exist with this email!");
-                return 0;
-            }
-
-            System.out.print("Enter Name: ");
-            String name = scanner.next();
-
-            System.out.print("Enter Contact Number: ");
-            long contact = scanner.nextLong();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, email);
@@ -55,17 +40,13 @@ public class User {
 
             int returnedRows = preparedStatement.executeUpdate();
 
-            if (returnedRows > 0) {
-                System.out.println("\nSUCCESS, user created!");
-                return contact;
-            }
+            if (returnedRows > 0) { return true; }
+            return false;
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
         }
-        System.out.println("\nFAILED! user not created!");
-        return 0;
-
     }
 
 }

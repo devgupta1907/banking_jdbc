@@ -17,47 +17,29 @@ public class Main {
             Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
             Scanner scanner = new Scanner(System.in);
 
-            User user = new User(connection, scanner );
+            User user = new User(connection, scanner);
             Account account = new Account(connection, scanner);
+            Application app = new Application(connection, scanner);
 
             System.out.println("\nWelcome to Anna Banking Services - Your happiness is our assets");
 
             while (true) {
                 System.out.println("\nWhat you want to do today?\n");
-                System.out.println("1. Create a bank account");
-                System.out.println("2. Login to your account");
-                System.out.println("3. Add money to your account");
-                System.out.println("4. Debit money from your account");
-                System.out.println("5. Check your account balance");
-                System.out.println("6. Transfer Funds");
+                System.out.println("1. Create A Bank Account");
+                System.out.println("2. Deposit In Your Account");
+                System.out.println("3. Withdraw From Your Account");
+                System.out.println("4. Transfer Funds");
+                System.out.println("5. Check Your Account Balance");
+                System.out.println("6. Print Account Statement");
 
                 int userInput = scanner.nextInt();
-
                 switch (userInput) {
-
-                    case 1 -> {
-                        long contact = user.createUser();
-                        if (contact != 0) { account.openAccount(contact);}
-                    }
-
-                    case 2 -> { System.out.println("System Under Maintenance 😎"); }
-
-                    case 3 -> {
-                        System.out.print("Enter your registered contact number: ");
-                        long contact = scanner.nextLong();
-                        account.creditAmount(contact);
-                    }
-
-                    case 4 -> {
-                        System.out.print("Enter your registered contact number: ");
-                        long contact = scanner.nextLong();
-                        account.debitAmount(contact);
-                    }
-
-                    case 5 -> { System.out.println(account.checkAccountBalance()); }
-                    case 6 -> {
-                        account.transferFunds();
-                    }
+                    case 1 -> app.createBankAccount();
+                    case 2 -> app.creditInBankAccount();
+                    case 3 -> app.debitFromBankAccount();
+                    case 4 -> app.transferOfFunds();
+                    case 5 -> app.displayAccountBalance();
+                    case 6 -> app.printTransactions();
                     case 0 -> {
                         System.out.println("Thank you for banking with us! Tada 👋");
                         return;
